@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaksi Peminjaman</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; font-family: Tahoma, sans-serif; }
+        .container { margin-top: 20px; }
+        .card-box {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center mb-4">Manajemen Peminjaman</h1>
+    <a href="index.html" class="btn btn-secondary mb-3">← Kembali</a>
+
+    <!-- Form Create -->
+    <div class="card-box">
+        <h3>Tambah Peminjaman Baru</h3>
+        <form id="peminjamanForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Mahasiswa</label>
+                    <select class="form-select" id="id_mahasiswa" required>
+                        <option value="">-- Pilih Mahasiswa --</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Asset</label>
+                    <select class="form-select" id="id_asset" required>
+                        <option value="">-- Pilih Asset --</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Jumlah</label>
+                    <input type="number" class="form-control" id="jumlah" required min="1">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status Peminjaman</label>
+                    <select class="form-select" id="status_peminjaman" required>
+                        <option value="Pending">Pending</option>
+                        <option value="Dipinjam">Dipinjam</option>
+                        <option value="Dikembalikan">Dikembalikan</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tanggal Pinjam</label>
+                    <input type="date" class="form-control" id="tanggal_pinjam" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tanggal Kembali</label>
+                    <input type="date" class="form-control" id="tanggal_kembali" required>
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Keterangan</label>
+                    <textarea class="form-control" id="keterangan" rows="2"></textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">Simpan Peminjaman</button>
+        </form>
+    </div>
+
+    <!-- Tabel Read -->
+    <div class="card-box">
+        <h3>Daftar Peminjaman</h3>
+        <table id="peminjamanTable" class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Mahasiswa</th>
+                    <th>Asset</th>
+                    <th>Jumlah</th>
+                    <th>Tgl Pinjam</th>
+                    <th>Tgl Kembali</th>
+                    <th>Status</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="8" class="text-center">Memuat data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = 'https://api.melangkah.my.id';
+    const readUrl    = `${BASE_URL}/peminjaman/read.php`;
+    const createUrl  = `${BASE_URL}/peminjaman/create.php`;
+    const mhsUrl     = `${BASE_URL}/mahasiswa/read.php`;
+    const assetUrl   = `${BASE_URL}/asset/read.php`;
+
+    // Load dropdown mahasiswa & asset
+    async function loadDropdowns() {
+        try {
+            // Mahasiswa
+            const r1 = await fetch(mhsUrl);
+            const mhs = await r1.json();
+            const sel1 = document.getElementById('id_mahasiswa');
+            mhs.forEach(m => {
+                sel1.innerHTML += `<option value="${m.id}">${m.nama} (${m.nim})</option>`;
+            });
+
+            // Asset
+            const r2 = await fetch(assetUrl);
+            const ast = await r2.json();
+            const sel2 = document.getElementById('id_asset');
+            ast.forEach(a => {
+                sel2.innerHTML += `<option value="${a.id}">${a.nama_asset} (${a.kategori})</option>`;
+            });
+        } catch (err) {
+            console.error('Gagal load dropdown:', err);
+        }
+    }
+
+    // READ
+    async function getPeminjaman() {
+        try {
+            const res = await fetch(readUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const tbody = document.querySelector('#peminjamanTable tbody');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Belum ada data peminjaman.</td></tr>';
+                return;
+            }
+
+            data.forEach(p => {
+                // Tampilkan nama mahasiswa/asset jika tersedia dari API, atau fallback ke ID
+                const namaMhs   = p.nama_mahasiswa   || p.nama   || `ID: ${p.id_mahasiswa}`;
+                const namaAsset = p.nama_asset       || p.asset  || `ID: ${p.id_asset}`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.id_peminjaman}</td>
+                        <td>${namaMhs}</td>
+                        <td>${namaAsset}</td>
+                        <td>${p.jumlah}</td>
+                        <td>${p.tanggal_pinjam}</td>
+                        <td>${p.tanggal_kembali}</td>
+                        <td>${p.status_peminjaman}</td>
+                        <td>${p.keterangan || '-'}</td>
+                    </tr>`;
+            });
+        } catch (err) {
+            console.error(err);
+            document.querySelector('#peminjamanTable tbody').innerHTML =
+                '<tr><td colspan="8" class="text-center text-danger">Gagal memuat data peminjaman.</td></tr>';
+        }
+    }
+
+    // CREATE
+    document.getElementById('peminjamanForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            id_mahasiswa:      parseInt(document.getElementById('id_mahasiswa').value),
+            id_asset:          parseInt(document.getElementById('id_asset').value),
+            jumlah:            parseInt(document.getElementById('jumlah').value),
+            tanggal_pinjam:    document.getElementById('tanggal_pinjam').value,
+            tanggal_kembali:   document.getElementById('tanggal_kembali').value,
+            keterangan:        document.getElementById('keterangan').value,
+            status_peminjaman: document.getElementById('status_peminjaman').value
+        };
+
+        try {
+            const res = await fetch(createUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            alert('Peminjaman berhasil dibuat!');
+            e.target.reset();
+            getPeminjaman();
+        } catch (err) {
+            console.error(err);
+            alert('Gagal membuat peminjaman.');
+        }
+    });
+
+    // Init
+    loadDropdowns();
+    getPeminjaman();
+</script>
+</body>
+</html>

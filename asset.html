@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Asset</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; font-family: Tahoma, sans-serif; }
+        .container { margin-top: 20px; }
+        .card-box {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .form-container { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card-box">
+        <h1 class="text-center mb-4">Master Asset</h1>
+        <a href="index.html" class="btn btn-secondary mb-3">← Kembali</a>
+        <button id="addDataBtn" class="btn btn-primary mb-3">+ Tambah Asset</button>
+
+        <table id="assetTable" class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th><th>Nama Asset</th><th>Kategori</th>
+                    <th>Jumlah</th><th>Kondisi</th><th>Lokasi</th>
+                    <th>Status</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="8" class="text-center">Memuat data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-box form-container" id="formContainer">
+        <h3 id="formTitle">Tambah Asset Baru</h3>
+        <form id="assetForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nama Asset</label>
+                    <input type="text" class="form-control" id="nama_asset" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Kategori</label>
+                    <input type="text" class="form-control" id="kategori" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Jumlah</label>
+                    <input type="number" class="form-control" id="jumlah" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Kondisi</label>
+                    <select class="form-select" id="kondisi" required>
+                        <option value="Baik">Baik</option>
+                        <option value="Rusak Ringan">Rusak Ringan</option>
+                        <option value="Rusak Berat">Rusak Berat</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Lokasi</label>
+                    <input type="text" class="form-control" id="lokasi" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="status" required>
+                        <option value="Tersedia">Tersedia</option>
+                        <option value="Dipinjam">Dipinjam</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success" id="submitBtn">Submit</button>
+            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = 'https://api.melangkah.my.id';
+    const readUrl   = `${BASE_URL}/asset/read.php`;
+    const createUrl = `${BASE_URL}/asset/create.php`;
+    const updateUrl = `${BASE_URL}/asset/update.php`;
+    const deleteUrl = `${BASE_URL}/asset/delete.php`;
+
+    // READ
+    async function getAssets() {
+        try {
+            const res = await fetch(readUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const tbody = document.querySelector('#assetTable tbody');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Belum ada data asset.</td></tr>';
+                return;
+            }
+
+            data.forEach(a => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${a.id}</td>
+                        <td>${a.nama_asset}</td>
+                        <td>${a.kategori}</td>
+                        <td>${a.jumlah}</td>
+                        <td>${a.kondisi}</td>
+                        <td>${a.lokasi}</td>
+                        <td>${a.status}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editAsset(${a.id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAsset(${a.id})">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            console.error(err);
+            document.querySelector('#assetTable tbody').innerHTML =
+                '<tr><td colspan="8" class="text-center text-danger">Gagal memuat data asset.</td></tr>';
+        }
+    }
+
+    // Buka form tambah
+    document.getElementById('addDataBtn').addEventListener('click', () => {
+        document.getElementById('formTitle').textContent = 'Tambah Asset Baru';
+        document.getElementById('submitBtn').textContent = 'Submit';
+        document.getElementById('assetForm').reset();
+        delete document.getElementById('assetForm').dataset.id;
+        document.getElementById('formContainer').style.display = 'block';
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+        document.getElementById('formContainer').style.display = 'none';
+    });
+
+    // CREATE & UPDATE
+    document.getElementById('assetForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = e.target.dataset.id;
+        const payload = {
+            nama_asset: document.getElementById('nama_asset').value,
+            kategori:   document.getElementById('kategori').value,
+            jumlah:     parseInt(document.getElementById('jumlah').value),
+            kondisi:    document.getElementById('kondisi').value,
+            lokasi:     document.getElementById('lokasi').value,
+            status:     document.getElementById('status').value
+        };
+
+        try {
+            let res;
+            if (id) {
+                payload.id = parseInt(id);
+                res = await fetch(updateUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                alert('Asset berhasil diperbarui!');
+            } else {
+                res = await fetch(createUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                alert('Asset berhasil ditambahkan!');
+            }
+            document.getElementById('formContainer').style.display = 'none';
+            getAssets();
+        } catch (err) {
+            console.error(err);
+            alert('Gagal mengirim data asset.');
+        }
+    });
+
+    // EDIT (ambil detail)
+    async function editAsset(id) {
+        try {
+            const res = await fetch(`${BASE_URL}/asset/detail.php?id=${id}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            let data = await res.json();
+            // Handle kalau API mengembalikan array
+            if (Array.isArray(data)) data = data[0];
+            if (!data) throw new Error('Data tidak ditemukan');
+
+            document.getElementById('nama_asset').value = data.nama_asset;
+            document.getElementById('kategori').value   = data.kategori;
+            document.getElementById('jumlah').value     = data.jumlah;
+            document.getElementById('kondisi').value    = data.kondisi;
+            document.getElementById('lokasi').value     = data.lokasi;
+            document.getElementById('status').value     = data.status;
+
+            document.getElementById('formTitle').textContent = 'Update Data Asset';
+            document.getElementById('submitBtn').textContent = 'Update';
+            document.getElementById('assetForm').dataset.id = data.id;
+            document.getElementById('formContainer').style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            alert('Gagal mengambil detail asset.');
+        }
+    }
+
+    // DELETE
+    async function deleteAsset(id) {
+        if (!confirm('Yakin ingin menghapus asset ini?')) return;
+        try {
+            const res = await fetch(`${deleteUrl}?id=${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            alert('Asset berhasil dihapus!');
+            getAssets();
+        } catch (err) {
+            console.error(err);
+            alert('Gagal menghapus asset.');
+        }
+    }
+
+    getAssets();
+</script>
+</body>
+</html>

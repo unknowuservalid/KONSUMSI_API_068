@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Mahasiswa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; font-family: Tahoma, sans-serif; }
+        .container { margin-top: 20px; }
+        .card-box {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .form-container { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card-box">
+        <h1 class="text-center mb-4">Master Mahasiswa</h1>
+        <a href="index.html" class="btn btn-secondary mb-3">← Kembali</a>
+        <button id="addDataBtn" class="btn btn-primary mb-3">+ Tambah Mahasiswa</button>
+
+        <table id="mhsTable" class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th><th>NIM</th><th>Nama</th><th>Jurusan</th>
+                    <th>Angkatan</th><th>Email</th><th>Telepon</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="8" class="text-center">Memuat data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-box form-container" id="formContainer">
+        <h3 id="formTitle">Tambah Mahasiswa Baru</h3>
+        <form id="mhsForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">NIM</label>
+                    <input type="text" class="form-control" id="nim" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nama</label>
+                    <input type="text" class="form-control" id="nama" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Jurusan</label>
+                    <input type="text" class="form-control" id="jurusan" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Angkatan</label>
+                    <input type="number" class="form-control" id="angkatan" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Telepon</label>
+                    <input type="text" class="form-control" id="telepon" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success" id="submitBtn">Submit</button>
+            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = 'https://api.melangkah.my.id';
+    const readUrl   = `${BASE_URL}/mahasiswa/read.php`;
+    const createUrl = `${BASE_URL}/mahasiswa/create.php`;
+    const updateUrl = `${BASE_URL}/mahasiswa/update.php`;
+    const deleteUrl = `${BASE_URL}/mahasiswa/delete.php`;
+
+    async function getMahasiswa() {
+        try {
+            const res = await fetch(readUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const tbody = document.querySelector('#mhsTable tbody');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Belum ada data mahasiswa.</td></tr>';
+                return;
+            }
+
+            data.forEach(m => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${m.id}</td>
+                        <td>${m.nim}</td>
+                        <td>${m.nama}</td>
+                        <td>${m.jurusan}</td>
+                        <td>${m.angkatan}</td>
+                        <td>${m.email}</td>
+                        <td>${m.telepon}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editMahasiswa(${m.id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteMahasiswa(${m.id})">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            console.error(err);
+            document.querySelector('#mhsTable tbody').innerHTML =
+                '<tr><td colspan="8" class="text-center text-danger">Gagal memuat data mahasiswa.</td></tr>';
+        }
+    }
+
+    document.getElementById('addDataBtn').addEventListener('click', () => {
+        document.getElementById('formTitle').textContent = 'Tambah Mahasiswa Baru';
+        document.getElementById('submitBtn').textContent = 'Submit';
+        document.getElementById('mhsForm').reset();
+        delete document.getElementById('mhsForm').dataset.id;
+        document.getElementById('formContainer').style.display = 'block';
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+        document.getElementById('formContainer').style.display = 'none';
+    });
+
+    document.getElementById('mhsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = e.target.dataset.id;
+        const payload = {
+            nim:      document.getElementById('nim').value,
+            nama:     document.getElementById('nama').value,
+            jurusan:  document.getElementById('jurusan').value,
+            angkatan: parseInt(document.getElementById('angkatan').value),
+            email:    document.getElementById('email').value,
+            telepon:  document.getElementById('telepon').value
+        };
+
+        try {
+            let res;
+            if (id) {
+                payload.id = parseInt(id);
+                res = await fetch(updateUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                alert('Mahasiswa berhasil diperbarui!');
+            } else {
+                res = await fetch(createUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                alert('Mahasiswa berhasil ditambahkan!');
+            }
+            document.getElementById('formContainer').style.display = 'none';
+            getMahasiswa();
+        } catch (err) {
+            console.error(err);
+            alert('Gagal mengirim data mahasiswa.');
+        }
+    });
+
+    async function editMahasiswa(id) {
+        try {
+            const res = await fetch(`${BASE_URL}/mahasiswa/detail.php?id=${id}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            let data = await res.json();
+            if (Array.isArray(data)) data = data[0];
+            if (!data) throw new Error('Data tidak ditemukan');
+
+            document.getElementById('nim').value      = data.nim;
+            document.getElementById('nama').value     = data.nama;
+            document.getElementById('jurusan').value  = data.jurusan;
+            document.getElementById('angkatan').value = data.angkatan;
+            document.getElementById('email').value    = data.email;
+            document.getElementById('telepon').value  = data.telepon;
+
+            document.getElementById('formTitle').textContent = 'Update Data Mahasiswa';
+            document.getElementById('submitBtn').textContent = 'Update';
+            document.getElementById('mhsForm').dataset.id = data.id;
+            document.getElementById('formContainer').style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            alert('Gagal mengambil detail mahasiswa.');
+        }
+    }
+
+    async function deleteMahasiswa(id) {
+        if (!confirm('Yakin ingin menghapus mahasiswa ini?')) return;
+        try {
+            const res = await fetch(`${deleteUrl}?id=${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            alert('Mahasiswa berhasil dihapus!');
+            getMahasiswa();
+        } catch (err) {
+            console.error(err);
+            alert('Gagal menghapus mahasiswa.');
+        }
+    }
+
+    getMahasiswa();
+</script>
+</body>
+</html>

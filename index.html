@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Utama - Konsumsi API - 068</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 450px;
+        }
+        h2 { color: #333; margin-bottom: 5px; text-align: center; }
+        .subtitle { font-size: 14px; color: #666; margin-bottom: 25px; text-align: center; }
+        .menu-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .menu-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            border-color: #007bff;
+        }
+        .menu-card h4 { margin: 0 0 5px 0; color: #007bff; font-size: 16px; }
+        .menu-card p { margin: 0 0 10px 0; font-size: 13px; color: #555; }
+        .menu-card a {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .menu-card a:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Tugas Konsumsi API</h2>
+        <div class="subtitle">Salsabilla Febyanti (0320250068)</div>
+
+        <div class="menu-card">
+            <h4>Master Asset</h4>
+            <p>CRUD data asset (Create, Read, Update, Delete).</p>
+            <a href="asset.html">Buka Halaman</a>
+        </div>
+
+        <div class="menu-card">
+            <h4>Master Mahasiswa</h4>
+            <p>CRUD data mahasiswa (Create, Read, Update, Delete).</p>
+            <a href="mahasiswa.html">Buka Halaman</a>
+        </div>
+
+        <div class="menu-card">
+            <h4>Transaksi Peminjaman</h4>
+            <p>Create & Read transaksi peminjaman asset.</p>
+            <a href="peminjaman.html">Buka Halaman</a>
+        </div>
+    </div>
+</body>
+</html>
